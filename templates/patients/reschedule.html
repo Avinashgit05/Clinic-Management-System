@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block page_title %}Reschedule Appointment{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-6">
+    <div class="clinic-card">
+      <div class="clinic-card-header">
+        <h5 class="clinic-card-title"><i class="bi bi-calendar-range text-warning"></i> Modify Current Booking</h5>
+      </div>
+      <div class="clinic-card-body">
+        
+        <div class="alert alert-secondary py-2" style="font-size:0.85rem">
+          <div><strong>Doctor:</strong> Dr. {{ appointment.doctor.user.last_name }}</div>
+          <div><strong>Current Selection:</strong> {{ appointment.date|date:"d M Y" }}, {{ appointment.get_time_slot_display_label }}</div>
+        </div>
+
+        {% if form.errors %}
+          <div class="alert alert-danger">
+            {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+            Please pick a valid slot.
+          </div>
+        {% endif %}
+
+        <form method="post" id="rescheduleForm">
+          {% csrf_token %}
+          <!-- Hidden inputs for JS ajax logic -->
+          <input type="hidden" id="id_doctor" value="{{ appointment.doctor.id }}">
+          
+          <div class="mb-3">
+            <label class="form-label">New Date</label>
+            {{ form.date }}
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Available Time Slots</label>
+            <div class="spinner-border spinner-border-sm text-primary d-none ms-2" id="slotLoader" role="status"></div>
+            <div class="d-none">{{ form.time_slot }}</div>
+            
+            <div class="slot-grid mt-2" id="slotGrid">
+              <div class="text-muted" style="font-size:0.8rem">Select a date to view slots.</div>
+            </div>
+            {% if form.time_slot.errors %}<div class="text-danger mt-1" style="font-size:0.75rem">{{ form.time_slot.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="d-flex gap-2">
+            <a href="{% url 'patients:my_appointments' %}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary-grad" id="submitBtn" disabled>Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Reuse the same logic from booking form -->
+<script>
+  const doctorId = document.getElementById('id_doctor').value;
+  const dateInput = document.getElementById('id_date');
+  const actualSelect = document.getElementById('id_time_slot');
+  const slotGrid = document.getElementById('slotGrid');
+  const loader = document.getElementById('slotLoader');
+  const submitBtn = document.getElementById('submitBtn');
+
+  // We have a globally mocked TIME_SLOT_CHOICES context variable or we can fetch.
+  // We'll trust the python logic limits for the example.
+  const allSlots = [
+    {"val": "09:00", "display": "09:00 AM"}, {"val": "09:30", "display": "09:30 AM"},
+    {"val": "10:00", "display": "10:00 AM"}, {"val": "10:30", "display": "10:30 AM"},
+    {"val": "11:00", "display": "11:00 AM"}, {"val": "11:30", "display": "11:30 AM"},
+    {"val": "12:00", "display": "12:00 PM"}, {"val": "12:30", "display": "12:30 PM"},
+    {"val": "13:00", "display": "01:00 PM"}, {"val": "13:30", "display": "01:30 PM"},
+    {"val": "14:00", "display": "02:00 PM"}, {"val": "14:30", "display": "02:30 PM"},
+    {"val": "15:00", "display": "03:00 PM"}, {"val": "15:30", "display": "03:30 PM"},
+    {"val": "16:00", "display": "04:00 PM"}, {"val": "16:30", "display": "04:30 PM"}
+  ];
+
+  function fetchSlots() {
+    const dateVal = dateInput.value;
+    if (!dateVal) return;
+    loader.classList.remove('d-none');
+    fetch(`/appointments/booked-slots/?doctor_id=${doctorId}&date=${dateVal}`)
+      .then(r => r.json())
+      .then(data => { loader.classList.add('d-none'); renderSlots(data.booked || []); })
+      .catch(err => { loader.classList.add('d-none'); });
+  }
+
+  function renderSlots(bookedSlots) {
+    slotGrid.innerHTML = ''; actualSelect.value = ''; submitBtn.disabled = true;
+    allSlots.forEach(slot => {
+      // Don't mark as booked if it's THIS appointment's slot on the same day
+      const isBooked = bookedSlots.includes(slot.val);
+      const btn = document.createElement('div');
+      btn.className = 'slot-btn' + (isBooked ? ' booked' : '');
+      btn.textContent = slot.display;
+      if (!isBooked) {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          actualSelect.value = slot.val;
+          submitBtn.disabled = false;
+        });
+      }
+      slotGrid.appendChild(btn);
+    });
+  }
+  dateInput.addEventListener('change', fetchSlots);
+  if (dateInput.value) fetchSlots();
+</script>
+{% endblock %}

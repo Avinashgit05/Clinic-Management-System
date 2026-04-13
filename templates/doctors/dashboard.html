@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% block page_title %}Doctor Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card purple">
+      <div class="stat-icon purple"><i class="bi bi-people-fill"></i></div>
+      <div class="stat-value">{{ total_patients }}</div>
+      <div class="stat-label">Unique Patients</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card orange">
+      <div class="stat-icon orange"><i class="bi bi-hourglass-split"></i></div>
+      <div class="stat-value">{{ pending_count }}</div>
+      <div class="stat-label">Today's Pending</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card green">
+      <div class="stat-icon green"><i class="bi bi-check-all"></i></div>
+      <div class="stat-value">{{ completed_count }}</div>
+      <div class="stat-label">Today's Completed</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Queue Controller -->
+  <div class="col-lg-5">
+    <div class="clinic-card h-100" id="token-poll-widget" data-doctor-id="{{ doctor.id }}">
+      <div class="clinic-card-header bg-dark bg-opacity-25">
+        <h5 class="clinic-card-title"><i class="bi bi-mic text-danger"></i> Live Queue Controller</h5>
+      </div>
+      <div class="clinic-card-body text-center">
+        <!-- Current Token -->
+        <div class="p-4 rounded-4" style="background:rgba(108,99,255,0.08); border:1px solid rgba(108,99,255,0.15)">
+          <div class="text-uppercase text-muted fw-bold" style="font-size:0.7rem; letter-spacing:1px">Current Patient Inside</div>
+          <div class="display-3 fw-bold my-2" style="color:var(--primary)" id="live-current-token">
+            {% if current_token %}#{{ current_token.token_number }}{% else %}—{% endif %}
+          </div>
+          <div class="fs-5 fw-semibold" id="live-current-patient">
+            {% if current_token %}{{ current_token.appointment.patient.user.get_full_name }}{% else %}No active patient{% endif %}
+          </div>
+        </div>
+
+        <div class="my-4">
+          <form method="post" action="{% url 'doctors:call_next' %}">
+            {% csrf_token %}
+            <button class="btn btn-teal btn-lg w-100 py-3 shadow" style="border-radius:14px" id="callNextBtn" {% if not next_token %}disabled{% endif %}>
+              <i class="bi bi-bell-fill me-2"></i> Call Next Patient: <span id="btn-next-text">{% if next_token %}#{{ next_token.token_number }}{% else %}Queue Empty{% endif %}</span>
+            </button>
+          </form>
+          <div class="mt-2 text-muted" style="font-size:0.75rem">Automatically completes current token and calls the next.</div>
+        </div>
+
+        <!-- Next in line queue preview -->
+        <h6 class="text-start mb-3 border-bottom pb-2 border-secondary">Waiting Queue 
+          <span class="badge bg-warning text-dark float-end" id="live-waiting-count">{{ queue.count }}</span>
+        </h6>
+        <div class="text-start" style="max-height:250px; overflow-y:auto">
+          {% for t in queue %}
+            {% if t.status == 'called' %}
+              <div class="queue-row bg-primary bg-opacity-10 px-2 rounded">
+                <div class="queue-token-num called">{{ t.token_number }}</div>
+                <div class="queue-info">
+                  <div class="queue-name text-primary">{{ t.appointment.patient.user.get_full_name }}</div>
+                  <div class="queue-time">Slot: {{ t.appointment.get_time_slot_display_label }} (Currently Inside)</div>
+                </div>
+              </div>
+            {% else %}
+              <div class="queue-row px-2">
+                <div class="queue-token-num">{{ t.token_number }}</div>
+                <div class="queue-info">
+                  <div class="queue-name">{{ t.appointment.patient.user.get_full_name }}</div>
+                  <div class="queue-time">Slot: {{ t.appointment.get_time_slot_display_label }}</div>
+                </div>
+              </div>
+            {% endif %}
+          {% empty %}
+             <div class="text-muted text-center py-4">No waiting patients.</div>
+          {% endfor %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Regular Appointments View -->
+  <div class="col-lg-7">
+    <div class="clinic-card h-100">
+      <div class="clinic-card-header">
+        <h5 class="clinic-card-title"><i class="bi bi-list-check text-primary"></i> Today's Schedule Overview</h5>
+        <a href="{% url 'doctors:appointments' %}" class="btn btn-sm btn-outline-light">View All</a>
+      </div>
+      <div class="clinic-card-body p-0">
+        <div class="table-responsive">
+          <table class="clinic-table">
+            <thead>
+              <tr>
+                <th>Time Slot</th>
+                <th>Patient</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for appt in today_appointments %}
+              <tr>
+                <td class="fw-medium">{{ appt.get_time_slot_display_label }}</td>
+                <td>{{ appt.patient.user.get_full_name }}</td>
+                <td><span class="status-badge status-{{ appt.status }}">{{ appt.get_status_display }}</span></td>
+                <td>
+                  <a href="{% url 'doctors:patient_detail' appt.pk %}" class="btn btn-sm btn-primary-grad py-1" style="font-size:0.75rem">Details</a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-center py-5 text-muted">No appointments booked for today.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Simple override to update the call button text based on live polling
+  const originalUpdate = window.ClinicTokenPoll ? window.ClinicTokenPoll.updateTokenDisplay : null;
+  if(originalUpdate === null) {
+      // Just extend the existing logic globally if it loads successfully
+      const originalPoll = window.ClinicTokenPoll.startPolling;
+      
+      const customUpdate = function(data) {
+          const btn = document.getElementById('callNextBtn');
+          const span = document.getElementById('btn-next-text');
+          if(data.next_token) {
+              btn.disabled = false;
+              span.textContent = '#' + data.next_token;
+          } else {
+              btn.disabled = true;
+              span.textContent = 'Queue Empty';
+          }
+      }
+      
+      // Monkey patch via a 5s repeating check instead of full override mapping
+      setInterval(() => {
+          let nxt = document.getElementById('live-next-token');
+          if(nxt) {
+              let text = nxt.textContent;
+              let btn = document.getElementById('callNextBtn');
+              let span = document.getElementById('btn-next-text');
+              if(text && text !== '—') {
+                  btn.disabled = false; span.textContent = text;
+              } else {
+                  btn.disabled = true; span.textContent = 'Queue Empty';
+              }
+          }
+      }, 5000);
+  }
+</script>
+{% endblock %}

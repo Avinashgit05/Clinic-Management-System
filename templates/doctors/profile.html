@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block page_title %}Doctor Profile Settings{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="clinic-card">
+      <div class="clinic-card-header">
+        <h5 class="clinic-card-title"><i class="bi bi-person-badge text-primary"></i> Professional Details</h5>
+      </div>
+      <div class="clinic-card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Specialization</label>
+              {{ form.specialization }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Qualification</label>
+              {{ form.qualification }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Contact Number</label>
+              {{ form.contact_number }}
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Experience (Years)</label>
+              {{ form.experience_years }}
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Consultation Fee</label>
+              <div class="input-group">
+                <span class="input-group-text bg-dark border-secondary text-muted">$</span>
+                {{ form.consultation_fee }}
+              </div>
+            </div>
+            <div class="col-md-12 mb-4">
+              <label class="form-label">Professional Bio</label>
+              {{ form.bio }}
+            </div>
+            <div class="col-md-12 mb-4">
+              <div class="form-check form-switch p-3 rounded" style="background:rgba(255,255,255,0.05); border:1px solid var(--card-border)">
+                <div class="float-end">
+                  {{ form.is_available }}
+                </div>
+                <label class="form-check-label fw-bold" for="{{ form.is_available.id_for_label }}">
+                  Available for Appointments
+                </label>
+                <div class="text-muted" style="font-size:0.75rem">Toggle this off if you are on leave.</div>
+              </div>
+            </div>
+          </div>
+          <div class="text-end">
+            <button type="submit" class="btn btn-primary-grad px-4">Update Profile</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

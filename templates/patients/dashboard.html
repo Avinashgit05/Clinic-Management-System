@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block page_title %}Patient Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card purple">
+      <div class="stat-icon purple"><i class="bi bi-calendar2-check"></i></div>
+      <div class="stat-value">{{ total_appointments }}</div>
+      <div class="stat-label">Total Appointments</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card teal">
+      <div class="stat-icon teal"><i class="bi bi-check-circle"></i></div>
+      <div class="stat-value">{{ completed }}</div>
+      <div class="stat-label">Completed Visits</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card orange">
+      <div class="stat-icon orange"><i class="bi bi-clock-history"></i></div>
+      <div class="stat-value">{{ upcoming.count }}</div>
+      <div class="stat-label">Upcoming Appointments</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="clinic-card h-100">
+      <div class="clinic-card-header">
+        <h5 class="clinic-card-title"><i class="bi bi-calendar-event text-primary"></i> Upcoming Appointments</h5>
+        <a href="{% url 'patients:book_appointment' %}" class="btn btn-sm btn-primary-grad">Book New</a>
+      </div>
+      <div class="clinic-card-body p-0">
+        <div class="table-responsive">
+          <table class="clinic-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Doctor</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for appt in upcoming %}
+              <tr>
+                <td class="fw-medium">{{ appt.date|date:"d M Y" }}</td>
+                <td>{{ appt.get_time_slot_display_label }}</td>
+                <td>Dr. {{ appt.doctor.user.last_name }} <small class="text-muted d-block">{{ appt.doctor.specialization }}</small></td>
+                <td><span class="status-badge status-{{ appt.status }}">{{ appt.get_status_display }}</span></td>
+                <td>
+                  <a href="{% url 'patients:view_token' appt.pk %}" class="btn btn-sm btn-teal py-1" style="font-size:0.75rem"><i class="bi bi-ticket-detailed"></i> View Token</a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center py-4 text-muted">You have no upcoming appointments.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="clinic-card h-100">
+      <div class="clinic-card-header">
+        <h5 class="clinic-card-title"><i class="bi bi-ticket-perforated text-warning"></i> Today's Live Token</h5>
+      </div>
+      <div class="clinic-card-body d-flex align-items-center justify-content-center">
+        {% if today_token %}
+          <div class="token-widget w-100" id="token-poll-widget" data-doctor-id="{{ today_token.appointment.doctor.id }}">
+            <div class="token-number" id="live-my-token">#{{ today_token.token_number }}</div>
+            <div class="token-label">Your Token</div>
+            
+            <div id="live-my-status" class="mt-2 text-warning fw-medium" style="font-size:0.85rem">
+              Connecting...
+            </div>
+            
+            <hr class="border-secondary my-3">
+            <div class="d-flex justify-content-between text-muted" style="font-size:0.8rem">
+              <span>Currently Calling: <strong class="text-white" id="live-current-token">--</strong></span>
+            </div>
+            <div class="mt-3">
+              <a href="{% url 'patients:view_token' today_token.appointment.pk %}" class="btn btn-sm btn-outline-light w-100">Go to Live Display</a>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center text-muted p-4">
+            <div style="font-size:3rem; opacity:0.2; margin-bottom:10px"><i class="bi bi-ban"></i></div>
+            <p class="mb-0">You don't have any appointments scheduled for today.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

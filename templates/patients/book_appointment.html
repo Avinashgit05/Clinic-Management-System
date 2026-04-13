@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block page_title %}Book Appointment{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-7">
+    <div class="clinic-card">
+      <div class="clinic-card-header">
+        <h5 class="clinic-card-title"><i class="bi bi-calendar-plus text-primary"></i> Schedule New Visit</h5>
+      </div>
+      <div class="clinic-card-body">
+        {% if form.errors %}
+          <div class="alert alert-danger">
+            Please correct the errors below.
+            {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+          </div>
+        {% endif %}
+        <form method="post" id="bookingForm">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label">Select Doctor</label>
+            {{ form.doctor }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Select Date</label>
+            {{ form.date }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Available Time Slots</label>
+            <div class="spinner-border spinner-border-sm text-primary d-none ms-2" id="slotLoader" role="status"></div>
+            <!-- Hidden actual select field -->
+            <div class="d-none">{{ form.time_slot }}</div>
+            
+            <div class="slot-grid mt-2" id="slotGrid">
+              <div class="text-muted" style="font-size:0.8rem">Please select a doctor and date first.</div>
+            </div>
+            {% if form.time_slot.errors %}<div class="text-danger mt-1" style="font-size:0.75rem">{{ form.time_slot.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Reason for Visit (Optional)</label>
+            {{ form.reason }}
+          </div>
+
+          <button type="submit" class="btn btn-primary-grad px-4" id="submitBtn" disabled>
+            Confirm Booking
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-5">
+    <div class="clinic-card" style="background: linear-gradient(135deg, rgba(108,99,255,0.05), rgba(62,207,207,0.05)); border:1px dashed var(--primary)">
+      <div class="clinic-card-body p-4 text-center">
+        <h5 class="fw-bold mb-3">How it works</h5>
+        <div class="text-start" style="font-size:0.85rem; color:var(--text-muted)">
+          <p><i class="bi bi-1-circle-fill text-primary me-2"></i> Choose your preferred doctor.</p>
+          <p><i class="bi bi-2-circle-fill text-primary me-2"></i> Pick an available future date.</p>
+          <p><i class="bi bi-3-circle-fill text-primary me-2"></i> Select an open 30-minute time slot.</p>
+          <p><i class="bi bi-4-circle-fill text-primary me-2"></i> Once booked, your Token number is automatically generated based on the day's queue sequence.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const doctorSelect = document.getElementById('id_doctor');
+  const dateInput = document.getElementById('id_date');
+  const actualSelect = document.getElementById('id_time_slot');
+  const slotGrid = document.getElementById('slotGrid');
+  const loader = document.getElementById('slotLoader');
+  const submitBtn = document.getElementById('submitBtn');
+
+  // Total possible slots defined in python
+  const allSlots = [
+    {% for val, display in all_slots %}
+      {val: '{{ val }}', display: '{{ display }}'},
+    {% endfor %}
+  ];
+
+  function fetchSlots() {
+    const docId = doctorSelect.value;
+    const dateVal = dateInput.value;
+    
+    if (!docId || !dateVal) {
+      slotGrid.innerHTML = '<div class="text-muted" style="font-size:0.8rem">Please select a doctor and date first.</div>';
+      submitBtn.disabled = true;
+      actualSelect.value = '';
+      return;
+    }
+
+    loader.classList.remove('d-none');
+    
+    fetch(`/appointments/booked-slots/?doctor_id=${docId}&date=${dateVal}`)
+      .then(r => r.json())
+      .then(data => {
+        loader.classList.add('d-none');
+        renderSlots(data.booked || []);
+      })
+      .catch(err => {
+        loader.classList.add('d-none');
+        slotGrid.innerHTML = '<div class="text-danger" style="font-size:0.8rem">Failed to load slots. Try again.</div>';
+      });
+  }
+
+  function renderSlots(bookedSlots) {
+    slotGrid.innerHTML = '';
+    actualSelect.value = ''; // Reset actual selection
+    submitBtn.disabled = true;
+
+    allSlots.forEach(slot => {
+      const isBooked = bookedSlots.includes(slot.val);
+      const btn = document.createElement('div');
+      btn.className = 'slot-btn' + (isBooked ? ' booked' : '');
+      btn.textContent = slot.display;
+      
+      if (!isBooked) {
+        btn.addEventListener('click', () => {
+          // Deselect others
+          document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          actualSelect.value = slot.val;
+          submitBtn.disabled = false;
+        });
+      }
+      slotGrid.appendChild(btn);
+    });
+  }
+
+  doctorSelect.addEventListener('change', fetchSlots);
+  dateInput.addEventListener('change', fetchSlots);
+
+  // Initial trigger if prepopulated (e.g. form error redirect)
+  if (doctorSelect.value && dateInput.value) {
+    fetchSlots();
+  }
+</script>
+{% endblock %}

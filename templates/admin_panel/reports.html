@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block page_title %}Clinic Performance Reports{% endblock %}
+
+{% block content %}
+<div class="clinic-card mb-4">
+  <div class="clinic-card-header bg-dark bg-opacity-25">
+    <div class="d-flex align-items-center justify-content-between">
+      <h5 class="clinic-card-title m-0"><i class="bi bi-file-earmark-bar-graph text-primary"></i> Daily Audit Report</h5>
+      <form method="get" class="d-flex gap-2 align-items-center">
+        <input type="date" name="date" class="form-control form-control-sm" value="{{ report_date|date:'Y-m-d' }}">
+        <button type="submit" class="btn btn-sm btn-primary-grad">Generate</button>
+      </form>
+    </div>
+  </div>
+  <div class="clinic-card-body">
+    <div class="row g-4 text-center">
+      <div class="col-md-4">
+        <div class="p-3 rounded" style="background:rgba(255,255,255,0.03); border:1px solid var(--card-border)">
+          <div class="display-6 fw-bold text-primary">{{ daily_count }}</div>
+          <div class="text-muted text-uppercase" style="font-size:0.75rem; letter-spacing:1px">Total Scheduled</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="p-3 rounded" style="background:rgba(255,255,255,0.03); border:1px solid var(--card-border)">
+          <div class="display-6 fw-bold text-success">{{ daily_completed }}</div>
+          <div class="text-muted text-uppercase" style="font-size:0.75rem; letter-spacing:1px">Consultations Finished</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="p-3 rounded" style="background:rgba(255,255,255,0.03); border:1px solid border:1px solid var(--card-border)">
+          <div class="display-6 fw-bold text-danger">{{ daily_cancelled }}</div>
+          <div class="text-muted text-uppercase" style="font-size:0.75rem; letter-spacing:1px">Cancellations</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="clinic-card">
+  <div class="clinic-card-header">
+    <h5 class="clinic-card-title"><i class="bi bi-person-hearts text-primary"></i> Doctor-wise Breakdown for {{ report_date|date:"M d, Y" }}</h5>
+  </div>
+  <div class="clinic-card-body p-0">
+    <div class="table-responsive">
+      <table class="clinic-table">
+        <thead>
+          <tr>
+            <th>Doctor Name</th>
+            <th>Specialization</th>
+            <th>Today's Volume</th>
+            <th>All-time Volume</th>
+            <th>Performance Trend</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for doc in doctor_report %}
+          <tr>
+            <td class="fw-bold">Dr. {{ doc.user.get_full_name }}</td>
+            <td>{{ doc.specialization }}</td>
+            <td>
+              <span class="badge bg-primary rounded-pill px-3 py-2">{{ doc.today_count }}</span>
+            </td>
+            <td>{{ doc.total }} consultations</td>
+            <td>
+              {% if doc.today_count > 0 %}
+                <span class="text-success" style="font-size:0.8rem"><i class="bi bi-graph-up-arrow"></i> Active</span>
+              {% else %}
+                <span class="text-muted" style="font-size:0.8rem"><i class="bi bi-dash"></i> Idle</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

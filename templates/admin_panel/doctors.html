@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block page_title %}Manage Doctors{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-8">
+    <div class="clinic-card">
+      <div class="clinic-card-header">
+        <h5 class="clinic-card-title"><i class="bi bi-person-badge text-primary"></i> Registered Doctors</h5>
+      </div>
+      <div class="clinic-card-body p-0">
+        <div class="table-responsive">
+          <table class="clinic-table">
+            <thead>
+              <tr>
+                <th>Doctor</th>
+                <th>Specialization</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for d in doctors %}
+              <tr>
+                <td>
+                  <div class="fw-bold">Dr. {{ d.user.get_full_name }}</div>
+                  <div class="text-muted" style="font-size:0.75rem">{{ d.user.email }}</div>
+                </td>
+                <td>{{ d.specialization }}</td>
+                <td>
+                  {% if d.is_available %}
+                    <span class="status-badge status-completed">Available</span>
+                  {% else %}
+                    <span class="status-badge status-cancelled">Unavailable</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <form method="post" action="{% url 'admin_panel:toggle_doctor' d.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm {% if d.is_available %}btn-outline-danger{% else %}btn-outline-success{% endif %} py-1" style="font-size:0.75rem">
+                      {% if d.is_available %}Mark Unavailable{% else %}Mark Available{% endif %}
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-center py-4">No doctors found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="clinic-card position-sticky" style="top: 80px">
+      <div class="clinic-card-header">
+        <h5 class="clinic-card-title"><i class="bi bi-person-plus text-primary"></i> Add New Doctor</h5>
+      </div>
+      <div class="clinic-card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-2">
+            <label class="form-label" style="font-size:0.75rem">Credentials</label>
+            {{ form.username }}
+            <div class="mt-2">{{ form.email }}</div>
+            <div class="mt-2">{{ form.password }}</div>
+          </div>
+          <hr class="border-secondary my-3">
+          <div class="mb-2">
+            <label class="form-label" style="font-size:0.75rem">Personal Info</label>
+            {{ form.first_name }}
+            <div class="mt-2">{{ form.last_name }}</div>
+          </div>
+          <hr class="border-secondary my-3">
+          <div class="mb-3">
+            <label class="form-label" style="font-size:0.75rem">Professional Details</label>
+            {{ form.specialization }}
+            <div class="mt-2">{{ form.contact_number }}</div>
+            <div class="row mt-2 g-2">
+              <div class="col-6">{{ form.experience_years }}</div>
+              <div class="col-6">{{ form.consultation_fee }}</div>
+            </div>
+            <div class="mt-2">{{ form.qualification }}</div>
+          </div>
+          
+          {% if form.errors %}
+            <div class="alert alert-danger p-2" style="font-size:0.75rem">Please check the fields.</div>
+          {% endif %}
+          <button type="submit" class="btn btn-primary-grad w-100">Add Doctor</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block page_title %}Token Status Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6 col-md-8">
+    <div class="clinic-card pt-4 pb-2" id="token-poll-widget" data-doctor-id="{{ appointment.doctor.id }}">
+      
+      <div class="text-center mb-4 px-4">
+        <h4 class="fw-bold">Dr. {{ appointment.doctor.user.last_name }}</h4>
+        <div class="text-muted" style="font-size:0.85rem">
+          {{ appointment.date|date:"l, F d, Y" }} <br>
+          Booking Slot: {{ appointment.get_time_slot_display_label }}
+        </div>
+      </div>
+
+      <div class="px-4">
+        <div class="token-widget w-100" style="padding:40px 20px;">
+          <div class="token-label mb-2" style="font-size:0.9rem">Your Token Number</div>
+          <div class="token-number" style="font-size:6.5rem;" id="live-my-token">#{{ token.token_number }}</div>
+          
+          <div class="mt-4">
+            <span class="token-status-badge token-{{ token.status }}" id="live-my-status-badge">
+              {{ token.get_status_display }}
+            </span>
+          </div>
+
+          <div id="live-my-status" class="mt-3 fw-medium text-warning" style="font-size:0.95rem">
+            {% if token.status == 'completed' %}
+              <span class="text-success">Consultation Completed.</span>
+            {% else %}
+              Connecting to live queue...
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Queue Context Table -->
+      <div class="mt-4 border-top" style="border-color:var(--card-border) !important">
+        <div class="d-flex p-3 px-4 bg-dark bg-opacity-50">
+          <div class="w-50 text-center border-end" style="border-color:rgba(255,255,255,0.05) !important">
+            <div class="text-muted text-uppercase mb-1" style="font-size:0.7rem; letter-spacing:1px">Currently Calling</div>
+            <div class="fw-bold fs-4 text-white" id="live-current-token">
+              {% if current_token %}#{{ current_token.token_number }}{% else %}—{% endif %}
+            </div>
+            <div id="live-current-patient" class="text-muted text-truncate px-2" style="font-size:0.75rem">
+              {% if current_token %}{{ current_token.appointment.patient.user.get_full_name }}{% else %}No active patient{% endif %}
+            </div>
+          </div>
+          <div class="w-50 text-center">
+            <div class="text-muted text-uppercase mb-1" style="font-size:0.7rem; letter-spacing:1px">Waiting Queue</div>
+            <div class="fw-bold fs-4 text-warning" id="live-waiting-count">...</div>
+            <div class="text-muted" style="font-size:0.75rem">patients behind</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center p-3 text-muted" style="font-size:0.7rem" id="live-timestamp">
+        Updating live...
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

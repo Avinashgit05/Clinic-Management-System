@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block page_title %}Clinic Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card purple">
+      <div class="stat-icon purple"><i class="bi bi-people-fill"></i></div>
+      <div class="stat-value">{{ total_patients }}</div>
+      <div class="stat-label">Total Patients</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card teal">
+      <div class="stat-icon teal"><i class="bi bi-person-badge"></i></div>
+      <div class="stat-value">{{ total_doctors }}</div>
+      <div class="stat-label">Doctors</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card green">
+      <div class="stat-icon green"><i class="bi bi-calendar-check"></i></div>
+      <div class="stat-value">{{ today_appointments }}</div>
+      <div class="stat-label">Appointments Today</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card orange">
+      <div class="stat-icon orange"><i class="bi bi-clock-history"></i></div>
+      <div class="stat-value">{{ pending }}</div>
+      <div class="stat-label">Pending Total</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="clinic-card h-100">
+      <div class="clinic-card-header">
+        <h5 class="clinic-card-title"><i class="bi bi-clipboard-data text-primary"></i> Recent Appointments</h5>
+      </div>
+      <div class="clinic-card-body p-0">
+        <div class="table-responsive">
+          <table class="clinic-table">
+            <thead>
+              <tr>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Date & Time</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for appt in recent_appointments %}
+              <tr>
+                <td>{{ appt.patient.user.get_full_name }}</td>
+                <td>Dr. {{ appt.doctor.user.last_name }}</td>
+                <td style="font-size:0.75rem">{{ appt.date|date:"D, M d" }} <br> {{ appt.get_time_slot_display_label }}</td>
+                <td><span class="status-badge status-{{ appt.status }}">{{ appt.get_status_display }}</span></td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-center py-4">No data.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="clinic-card h-100">
+      <div class="clinic-card-header">
+        <h5 class="clinic-card-title"><i class="bi bi-graph-up-arrow text-success"></i> Top Doctors (By Volume)</h5>
+      </div>
+      <div class="clinic-card-body">
+        {% for doc in doctor_stats %}
+        <div class="d-flex align-items-center mb-3">
+          <div class="user-avatar bg-primary text-white me-3">{{ doc.user.first_name|first|upper }}{{ doc.user.last_name|first|upper }}</div>
+          <div class="flex-grow-1">
+            <h6 class="mb-0 fs-6">Dr. {{ doc.user.get_full_name }}</h6>
+            <div class="text-muted" style="font-size:0.75rem">{{ doc.specialization }}</div>
+          </div>
+          <div class="text-end">
+            <div class="fw-bold fs-5 text-primary">{{ doc.appt_count }}</div>
+            <div class="text-muted" style="font-size:0.65rem; text-transform:uppercase">Appts</div>
+          </div>
+        </div>
+        {% empty %}
+          <div class="text-muted text-center py-4">No data.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

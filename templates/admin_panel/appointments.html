@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block page_title %}Network Appointments{% endblock %}
+
+{% block content %}
+<div class="clinic-card mb-4">
+  <div class="clinic-card-header">
+    <h5 class="clinic-card-title"><i class="bi bi-funnel text-primary"></i> Filter Appointments</h5>
+  </div>
+  <div class="clinic-card-body p-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label" style="font-size:0.75rem">Date</label>
+        <input type="date" name="date" class="form-control form-control-sm" value="{{ date_filter }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" style="font-size:0.75rem">Doctor</label>
+        <select name="doctor" class="form-select form-select-sm">
+          <option value="">All Doctors</option>
+          {% for d in doctors %}
+            <option value="{{ d.pk }}" {% if doctor_filter == d.pk|stringformat:"s" %}selected{% endif %}>Dr. {{ d.user.last_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" style="font-size:0.75rem">Status</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">All Statuses</option>
+          <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+          <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmed</option>
+          <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+          <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-sm btn-primary-grad w-100">Fetch Records</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="clinic-card">
+  <div class="clinic-card-body p-0">
+    <div class="table-responsive">
+      <table class="clinic-table">
+        <thead>
+          <tr>
+            <th>Date & Time</th>
+            <th>Patient</th>
+            <th>Doctor</th>
+            <th>Status</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for appt in appointments %}
+          <tr>
+            <td>
+              <div class="fw-bold">{{ appt.date|date:"d M Y" }}</div>
+              <div class="text-muted" style="font-size:0.75rem">{{ appt.get_time_slot_display_label }}</div>
+            </td>
+            <td>
+              {{ appt.patient.user.get_full_name }}
+              <div class="text-muted" style="font-size:0.75rem">#{{ appt.patient.pk }}</div>
+            </td>
+            <td>Dr. {{ appt.doctor.user.last_name }} <br><span class="text-muted" style="font-size:0.75rem">{{ appt.doctor.specialization }}</span></td>
+            <td><span class="status-badge status-{{ appt.status }}">{{ appt.get_status_display }}</span></td>
+            <td style="font-size:0.75rem" class="text-muted">{{ appt.created_at|date:"d M H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-center py-5 text-muted">No appointments found matching your filters.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

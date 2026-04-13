@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block page_title %}Patient Details{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-4 mb-4">
+    <div class="doctor-card">
+      <div class="doctor-avatar">
+        {{ appointment.patient.user.first_name|first|upper }}{{ appointment.patient.user.last_name|first|upper }}
+      </div>
+      <h5 class="fw-bold mt-2 mb-1">{{ appointment.patient.user.get_full_name }}</h5>
+      <p class="text-muted mb-3" style="font-size:0.85rem">Patient ID: {{ appointment.patient.pk }}</p>
+      
+      <div class="text-start p-3 rounded" style="background:rgba(255,255,255,0.03); border:1px solid var(--card-border); font-size:0.85rem">
+        <div class="mb-2"><strong class="text-white">Age:</strong> {{ appointment.patient.age|default:"N/A" }}</div>
+        <div class="mb-2"><strong class="text-white">Gender:</strong> {{ appointment.patient.get_gender_display|default:"N/A" }}</div>
+        <div class="mb-2"><strong class="text-white">Blood Group:</strong> {{ appointment.patient.blood_group|default:"N/A" }}</div>
+        <div class="mb-2"><strong class="text-white">Contact:</strong> {{ appointment.patient.contact_number|default:"N/A" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="clinic-card mb-4">
+      <div class="clinic-card-header bg-dark bg-opacity-25">
+        <h5 class="clinic-card-title"><i class="bi bi-file-earmark-medical text-primary"></i> Medical Information</h5>
+      </div>
+      <div class="clinic-card-body p-4">
+        
+        <h6 class="text-white border-bottom border-secondary pb-2 mb-3">Patient's Reason for Visit (Current)</h6>
+        <p class="text-muted mb-4">{{ appointment.reason|default:"No specific reason provided." }}</p>
+
+        <h6 class="text-white border-bottom border-secondary pb-2 mb-3">Past Medical History</h6>
+        <p class="text-muted mb-0">{{ appointment.patient.medical_history|default:"No medical history provided by the patient."|linebreaksbr }}</p>
+
+      </div>
+    </div>
+
+    <!-- Consultation Action Box -->
+    <div class="clinic-card" style="border: 1px solid var(--primary)">
+      <div class="clinic-card-body p-4">
+        <h5 class="fw-bold mb-3">Post-Consultation Actions</h5>
+        
+        {% if appointment.status != 'completed' %}
+        <form method="post" action="{% url 'doctors:mark_completed' appointment.pk %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label text-muted">Doctors Notes / Prescription Summary</label>
+            <textarea class="form-control bg-dark text-white border-secondary" name="notes" rows="4" placeholder="Enter findings and prescriptions here..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-success px-4" onclick="return confirm('Mark this patient as completed?')">
+            <i class="bi bi-check-circle me-2"></i> Mark as Completed
+          </button>
+        </form>
+        {% else %}
+        <div class="alert alert-success d-inline-block p-2"><i class="bi bi-check2-all me-2"></i>Consultation Completed</div>
+        <div class="mt-3">
+          <label class="form-label text-muted">Your Notes:</label>
+          <div class="p-3 bg-dark bg-opacity-50 border border-secondary rounded text-white" style="font-size:0.85rem">
+            {{ appointment.notes|default:"No notes were added."|linebreaksbr }}
+          </div>
+        </div>
+        {% endif %}
+        
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
